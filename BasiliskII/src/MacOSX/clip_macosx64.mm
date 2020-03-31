@@ -685,7 +685,20 @@ static NSAttributedString *AttributedStringFromMacTEXTAndStyl(NSData *textData, 
 
 		[attrs setObject:color forKey:NSForegroundColorAttributeName];
 
-		NSData *partialData = [textData subdataWithRange:NSMakeRange(startChar, nextChar - startChar)];
+        NSData *partialData;
+        int x = 0;
+        int tLen = [textData length];
+        int len = nextChar-startChar;
+        if (startChar<0)
+            startChar = 0;
+        if (startChar>=tLen) {
+            partialData = [textData subdataWithRange:NSMakeRange(0, 0)];
+        } else if (startChar+len>=tLen) {
+            partialData = [textData subdataWithRange:NSMakeRange(startChar, tLen-startChar)];
+        } else {
+            partialData = [textData subdataWithRange:NSMakeRange(startChar, nextChar - startChar)];
+        }
+
 		NSString *partialString = [[NSString alloc] initWithData:partialData encoding:CFStringConvertEncodingToNSStringEncoding(encoding)];
 
 		if (partialString) {

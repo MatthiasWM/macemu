@@ -1,5 +1,20 @@
 # Mac Emulation
 
+## For for Newton Tool Kit
+
+So you picked up the forked version of BasiliskII/SHeepShaver from https://github.com/MatthiasWM/macemu . 
+This is a fork from the latest git repo I could find at https://github.com/emaculation/macemu . I made a
+few modifications for the macOS host platform that were needed to get BasiliskII to connect with the Newton Emulator 
+"Einstein" at https://github.com/pguyot/Einstein . Just set the preferences entry "seriala" to "tcp:3679"
+and the serial port will behave like a TCP/IP server, listening on port 3679 for incoming connections.
+
+I fixed copy/paste of text which would occasionally crash on macOS. Also, the CapsLock
+key would lock forwever on the current version of SDL2.
+
+This code should compile out of the box on macOS Cataline in 64 bit mode.
+
+### Original Content
+
 This repository contains the [BasiliskII](BasiliskII/) and [SheepShaver](SheepShaver/) projects.  It is an attempt to centralize the individual development efforts that have gone on in the absence of the original [cebix/macemu](https://github.com/cebix/macemu) repository owner.
 
 The [cxmon](https://github.com/emaculation/cxmon) project has been split from this repository.

@@ -25,6 +25,7 @@ RCSID("$OpenBSD: sshpty.c,v 1.4 2001/12/19 07:18:56 deraadt Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <pwd.h>
+#include <sys/ioctl.h>
 
 #include <unistd.h> /* For STDIN_FILENO, etc */
 #include <termios.h> /* Struct winsize */
@@ -182,7 +183,7 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 		close(*ptyfd);
 		return 0;
 	}
-#ifndef HAVE_CYGWIN
+#if !defined(HAVE_CYGWIN) && !defined(__APPLE__)
 	/*
 	 * Push the appropriate streams modules, as described in Solaris pts(7).
 	 * HP-UX pts(7) doesn't have ttcompat module.

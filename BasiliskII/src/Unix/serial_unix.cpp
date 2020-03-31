@@ -32,6 +32,9 @@
 #include <linux/major.h>
 #include <linux/kdev_t.h>
 #endif
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "cpu_emulation.h"
 #include "main.h"
@@ -44,7 +47,7 @@ extern "C" {
 #include "sshpty.h"
 }
 
-
+#undef DEBUG
 #define DEBUG 0
 #include "debug.h"
 
@@ -75,43 +78,13 @@ static int cfmakeraw(struct termios *termios_p)
 }
 #endif
 
-
+// ----------------------------------------------------------------------------
 // Driver private variables
-class XSERDPort : public SERDPort {
+class XSERDPort : public SERDPort
+{
 public:
-	XSERDPort(const char *dev)
-	{
-		device_name = dev;
-		protocol = serial;
-		fd = -1;
-		pid = 0;
-		input_thread_active = output_thread_active = false;
-
-		Set_pthread_attr(&thread_attr, 2);
-	}
-
-	virtual ~XSERDPort()
-	{
-		if (input_thread_active) {
-			input_thread_cancel = true;
-#ifdef HAVE_PTHREAD_CANCEL
-			pthread_cancel(input_thread);
-#endif
-			pthread_join(input_thread, NULL);
-			sem_destroy(&input_signal);
-			input_thread_active = false;
-		}
-		if (output_thread_active) {
-			output_thread_cancel = true;
-#ifdef HAVE_PTHREAD_CANCEL
-			pthread_cancel(output_thread);
-#endif
-			pthread_join(output_thread, NULL);
-			sem_destroy(&output_signal);
-			output_thread_active = false;
-		}
-	}
-
+    XSERDPort(const char *dev);
+    virtual ~XSERDPort();
 	virtual int16 open(uint16 config);
 	virtual int16 prime_in(uint32 pb, uint32 dce);
 	virtual int16 prime_out(uint32 pb, uint32 dce);
@@ -121,13 +94,15 @@ public:
 
 private:
 	bool open_pty(void);
+    bool open_tcp_server(int port);
+    bool open_tcp_client(const char *addr, int port);
 	bool configure(uint16 config);
 	void set_handshake(uint32 s, bool with_dtr);
 	static void *input_func(void *arg);
 	static void *output_func(void *arg);
 
 	const char *device_name;			// Device name
-	enum {serial, parallel, pty, midi}
+	enum {serial, parallel, pty, midi, tcp_server, tcp_client}
 		protocol;						// Type of device
 	int fd;								// FD of device
 	pid_t pid;							// PID of child process
@@ -150,36 +125,106 @@ private:
 	uint32 output_pb;					// Command parameter for output thread
 
 	struct termios mode;				// Terminal configuration
+
+    void *tcp_thread();                 // thread that handle tcp connections
+    static void *tcp_thread_stub(void *arg) { return ((XSERDPort*)arg)->tcp_thread(); }
+    void tcp_accept_client();
+    void tcp_disconnect_client();
+    bool tcp_launch_thread();
+    void tcp_kill_thread(bool for_good=false);
+
+    int tcp_socket;                     // tcp server socket for listening
+    int command_pipe[2];                // a pipe that communicates between app and tcp thread
+    bool tcp_thread_active;             // TCP server thread installed
+    pthread_t tcp_thread_handler;       // TCP server thread
+    pthread_mutex_t fd_mutex;           // protect fd in threads
 };
 
+// ----------------------------------------------------------------------------
 
 /*
  *  Initialization
  */
-
 void SerialInit(void)
 {
-	// Read serial preferences and create structs for both ports
-	the_serd_port[0] = new XSERDPort(PrefsFindString("seriala"));
-	the_serd_port[1] = new XSERDPort(PrefsFindString("serialb"));
+    // Read serial preferences and create structs for both ports
+    the_serd_port[0] = new XSERDPort(PrefsFindString("seriala"));
+    the_serd_port[1] = new XSERDPort(PrefsFindString("serialb"));
 }
 
 
 /*
  *  Deinitialization
  */
-
 void SerialExit(void)
 {
-	delete (XSERDPort *)the_serd_port[0];
-	delete (XSERDPort *)the_serd_port[1];
+    delete (XSERDPort *)the_serd_port[0];
+    delete (XSERDPort *)the_serd_port[1];
+}
+
+// ----------------------------------------------------------------------------
+
+/*
+ * Constructor.
+ */
+XSERDPort::XSERDPort(const char *dev)
+:   device_name(0L)
+,   protocol(serial)
+,   fd(-1)
+,   pid(0)
+,   io_killed(false)
+,   quitting(false)
+,   input_thread_active(false)
+,   input_thread_cancel(false)
+,   input_thread(0)
+,   input_signal(0)
+,   input_pb(0)
+,   output_thread_active(false)
+,   output_thread_cancel(false)
+,   output_thread(0)
+,   output_signal(0)
+,   output_pb(0)
+,   tcp_socket(-1)
+,   tcp_thread_active(false)
+,   tcp_thread_handler(0)
+{
+    command_pipe[0] = command_pipe[1] = -1;
+    device_name = dev;
+    Set_pthread_attr(&thread_attr, 2);
+    pthread_mutex_init(&fd_mutex, 0L);
+}
+
+
+/*
+ * Destructor.
+ */
+XSERDPort::~XSERDPort()
+{
+    if (input_thread_active) {
+        input_thread_cancel = true;
+#ifdef HAVE_PTHREAD_CANCEL
+        pthread_cancel(input_thread);
+#endif
+        pthread_join(input_thread, NULL);
+        sem_destroy(&input_signal);
+        input_thread_active = false;
+    }
+    if (output_thread_active) {
+        output_thread_cancel = true;
+#ifdef HAVE_PTHREAD_CANCEL
+        pthread_cancel(output_thread);
+#endif
+        pthread_join(output_thread, NULL);
+        sem_destroy(&output_signal);
+        output_thread_active = false;
+    }
+    tcp_kill_thread(true);
 }
 
 
 /*
  *  Open serial port
  */
-
 int16 XSERDPort::open(uint16 config)
 {
 	// Don't open NULL name devices
@@ -200,7 +245,23 @@ int16 XSERDPort::open(uint16 config)
 		// MIDI:  not yet implemented
 		return openErr;
 	}
-	else {
+    else if (strncmp(device_name, "tcp:", 4)==0) {
+        const char *cc = strrchr(device_name, ':');
+        int port = atoi(cc+1);
+        if (cc==device_name+3) {
+            // port only: we are the server
+            if (!open_tcp_server(port))
+                goto open_error;
+        } else {
+            // address followed by port: we are the client
+            char *address = strdup(device_name);
+            address[ cc-device_name ] = 0;
+            bool ret = open_tcp_client(address, port);
+            if (!ret)
+                goto open_error;
+        }
+    }
+    else {
 		// Device special file
 		fd = ::open(device_name, O_RDWR);
 		if (fd < 0)
@@ -244,6 +305,8 @@ int16 XSERDPort::open(uint16 config)
 	output_thread_active = (pthread_create(&output_thread, &thread_attr, output_func, this) == 0);
 	if (!input_thread_active || !output_thread_active)
 		goto open_error;
+    if (protocol==tcp_server)
+        tcp_launch_thread();
 	return noErr;
 
 open_error:
@@ -265,10 +328,13 @@ open_error:
 		sem_destroy(&output_signal);
 		output_thread_active = false;
 	}
+    tcp_kill_thread();
+    pthread_mutex_lock(&fd_mutex);
 	if (fd > 0) {
 		::close(fd);
 		fd = -1;
 	}
+    pthread_mutex_unlock(&fd_mutex);
 	return openErr;
 }
 
@@ -276,7 +342,6 @@ open_error:
 /*
  *  Read data from port
  */
-
 int16 XSERDPort::prime_in(uint32 pb, uint32 dce)
 {
 	// Send input command to input_thread
@@ -292,7 +357,6 @@ int16 XSERDPort::prime_in(uint32 pb, uint32 dce)
 /*
  *  Write data to port
  */
-
 int16 XSERDPort::prime_out(uint32 pb, uint32 dce)
 {
 	// Send output command to output_thread
@@ -308,16 +372,20 @@ int16 XSERDPort::prime_out(uint32 pb, uint32 dce)
 /*
  *	Control calls
  */
-
 int16 XSERDPort::control(uint32 pb, uint32 dce, uint16 code)
 {
+    int i;
 	switch (code) {
 		case 1:			// KillIO
+            bug("**** Calling KillIO\n");
 			io_killed = true;
 			if (protocol == serial)
 				tcflush(fd, TCIOFLUSH);
-			while (read_pending || write_pending)
+            for (i=0; i<100; i++) { // wait no longer than 1 sec. to avoid a hanging machine!
+                if (!read_pending && !write_pending) break;
 				usleep(10000);
+            }
+            read_pending = write_pending = false;
 			io_killed = false;
 			return noErr;
 
@@ -473,13 +541,19 @@ int16 XSERDPort::control(uint32 pb, uint32 dce, uint16 code)
 /*
  *	Status calls
  */
-
 int16 XSERDPort::status(uint32 pb, uint32 dce, uint16 code)
 {
 	switch (code) {
 		case kSERDInputCount: {
-			int num;
-			ioctl(fd, FIONREAD, &num);
+			int num = 0;
+            if (protocol==tcp_server) {
+                pthread_mutex_lock(&fd_mutex);
+                if (fd!=-1)
+                    ioctl(fd, FIONREAD, &num);
+                pthread_mutex_unlock(&fd_mutex);
+            } else {
+                ioctl(fd, FIONREAD, &num);
+            }
 			WriteMacInt32(pb + csParam, num);
 			return noErr;
 		}
@@ -520,7 +594,6 @@ int16 XSERDPort::status(uint32 pb, uint32 dce, uint16 code)
 /*
  *	Close serial port
  */
-
 int16 XSERDPort::close()
 {
 	// Kill threads
@@ -538,11 +611,14 @@ int16 XSERDPort::close()
 		output_thread_active = false;
 		sem_destroy(&output_signal);
 	}
+    tcp_kill_thread();
 
 	// Close port
+    pthread_mutex_lock(&fd_mutex);
 	if (fd > 0)
 		::close(fd);
 	fd = -1;
+    pthread_mutex_unlock(&fd_mutex);
 
 	// Wait for the subprocess to exit
 	if (pid)
@@ -556,7 +632,6 @@ int16 XSERDPort::close()
 /*
  * Open a process via ptys
  */
-
 bool XSERDPort::open_pty(void)
 {
 	// Talk to a process via a pty
@@ -606,7 +681,6 @@ bool XSERDPort::open_pty(void)
 /*
  *  Configure serial port with MacOS config word
  */
-
 bool XSERDPort::configure(uint16 config)
 {
 	D(bug(" configure %04x\n", config));
@@ -648,16 +722,16 @@ bool XSERDPort::configure(uint16 config)
 	// Set number of data bits
 	switch (config & 0x0c00) {
 		case data5:
-			mode.c_cflag = mode.c_cflag & ~CSIZE | CS5;
+			mode.c_cflag = (mode.c_cflag & ~CSIZE) | CS5;
 			break;
 		case data6:
-			mode.c_cflag = mode.c_cflag & ~CSIZE | CS6;
+			mode.c_cflag = (mode.c_cflag & ~CSIZE) | CS6;
 			break;
 		case data7:
-			mode.c_cflag = mode.c_cflag & ~CSIZE | CS7;
+			mode.c_cflag = (mode.c_cflag & ~CSIZE) | CS7;
 			break;
 		case data8:
-			mode.c_cflag = mode.c_cflag & ~CSIZE | CS8;
+			mode.c_cflag = (mode.c_cflag & ~CSIZE) | CS8;
 			break;
 	}
 
@@ -688,7 +762,6 @@ bool XSERDPort::configure(uint16 config)
 /*
  *  Set serial handshaking
  */
-
 void XSERDPort::set_handshake(uint32 s, bool with_dtr)
 {
 	D(bug(" set_handshake %02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -717,12 +790,10 @@ void XSERDPort::set_handshake(uint32 s, bool with_dtr)
 /*
  *  Data input thread
  */
-
 void *XSERDPort::input_func(void *arg)
 {
-	XSERDPort *s = (XSERDPort *)arg;
+    XSERDPort *s = (XSERDPort *)arg;
 	while (!s->input_thread_cancel) {
-
 		// Wait for commands
 		sem_wait(&s->input_signal);
 		if (s->quitting)
@@ -732,8 +803,17 @@ void *XSERDPort::input_func(void *arg)
 		void *buf = Mac2HostAddr(ReadMacInt32(s->input_pb + ioBuffer));
 		uint32 length = ReadMacInt32(s->input_pb + ioReqCount);
 		D(bug("input_func waiting for %ld bytes of data...\n", length));
-		int32 actual = read(s->fd, buf, length);
-		D(bug(" %ld bytes received\n", actual));
+
+        int actual = 0;
+        int num = 0;
+        pthread_mutex_lock(&s->fd_mutex);
+        ioctl(s->fd, FIONREAD, &num);
+        if (num>0)
+            actual = (int)::read(s->fd, buf, length);
+        pthread_mutex_unlock(&s->fd_mutex);
+        if (num==0)
+            usleep(10000); // avoid beiing slammed with read requests
+        D(bug(" %ld bytes received\n", actual));
 
 #if MONITOR
 		bug("Receiving serial data:\n");
@@ -776,7 +856,6 @@ void *XSERDPort::input_func(void *arg)
 /*
  *  Data output thread
  */
-
 void *XSERDPort::output_func(void *arg)
 {
 	XSERDPort *s = (XSERDPort *)arg;
@@ -801,7 +880,9 @@ void *XSERDPort::output_func(void *arg)
 		bug("\n");
 #endif
 
-		int32 actual = write(s->fd, buf, length);
+        pthread_mutex_lock(&s->fd_mutex);
+		int32 actual = s->fd==-1 ? length : (int)write(s->fd, buf, length);
+        pthread_mutex_unlock(&s->fd_mutex);
 		D(bug(" %ld bytes transmitted\n", actual));
 
 		// KillIO called? Then simply return
@@ -831,3 +912,193 @@ void *XSERDPort::output_func(void *arg)
 	}
 	return NULL;
 }
+
+// ---- tcp/ip ----------------------------------------------------------------
+
+/*
+ * Open a process as a tcp server
+ * Default port is 3679
+ */
+bool XSERDPort::open_tcp_server(int port)
+{
+    struct sockaddr_in serv_addr;
+
+    protocol = tcp_server;
+
+    // create a socket that will listen to incomming tcp connections
+    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcp_socket < 0) {
+        bug("XSERDPort::open_tcp_server: can't create socket: %s\n", strerror(errno));
+        return false;
+    }
+
+    // make sure that a previously opened socket is killed and does not get stuck in TIMEOUT
+    int option = 1;
+    setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+
+    // bind the socket to a port
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(port);
+    if (bind(tcp_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        bug("XSERDPort::open_tcp_server: can't bind socket %d to port %d: %s\n", tcp_socket, port, strerror(errno));
+        return false;
+    }
+
+    // now listen to that port for one incomming connection (but no more than one)
+    if (::listen(tcp_socket, 1)==-1) {
+        bug("XSERDPort::open_tcp_server: can't listen on socket %d: %s\n", tcp_socket, strerror(errno));
+        return false;
+    }
+    return true;
+}
+
+
+/*
+ * Manage incoming connections on our TCP port.
+ */
+void *XSERDPort::tcp_thread()
+{
+//    pthread_mutex_lock(&fd_mutex);
+//    pthread_mutex_unlock(&fd_mutex);
+
+    fd_set readFDs;
+    struct sockaddr_in clientname;
+
+    // Loop forever
+    for (;;)
+    {
+        // Listen to all availabel sockets
+        FD_ZERO(&readFDs);
+        FD_SET(tcp_socket, &readFDs);
+        FD_SET(command_pipe[0], &readFDs);
+        pthread_mutex_lock(&fd_mutex);
+        if (fd!=-1) FD_SET(fd, &readFDs);
+        pthread_mutex_unlock(&fd_mutex);
+
+        // Wait for something to happen
+        int nEvents = select(FD_SETSIZE, &readFDs, NULL, NULL, NULL);
+        if (nEvents==-1) {
+            bug("XSERDPort::tcp_func: error waiting for TCP client: %s\n", strerror(errno));
+        }
+
+        // Handle events form an existing client
+        pthread_mutex_lock(&fd_mutex);
+        bool handleClient = (fd!=-1 && FD_ISSET(fd, &readFDs));
+        pthread_mutex_unlock(&fd_mutex);
+        if (handleClient) {
+            char buf[1];
+            pthread_mutex_lock(&fd_mutex);
+            fprintf(stderr, "-->");
+            size_t ret  = ::recv(fd, buf, 1, MSG_PEEK);
+            fprintf(stderr, "<--\n");
+            pthread_mutex_unlock(&fd_mutex);
+            if (ret==-1) { // error
+                if (errno==EAGAIN || errno==EWOULDBLOCK) {
+                    // that's ok
+                } else {
+                    bug("XSERDPort::tcp_func: client read error: %s\n", strerror(errno));
+                    tcp_disconnect_client();
+                }
+            }
+            if (ret==0) { // disconnect
+                bug("XSERDPort::tcp_func: client disconnected\n");
+                tcp_disconnect_client();
+            }
+        }
+
+        // Handle incoming client connection requests
+        if (FD_ISSET(tcp_socket, &readFDs)) {
+            // a client wants to connect to us
+            bug("--- sel: request connect\n");
+            tcp_disconnect_client();
+            socklen_t size = sizeof(clientname);
+            int tmp_fd = ::accept(tcp_socket, (struct sockaddr *) &clientname, &size);
+            if (tmp_fd<0) {
+                bug("XSERDPort::tcp_func: error accepting TCP client: %s\n", strerror(errno));
+            }
+            fcntl(tmp_fd, F_SETFL, O_NONBLOCK);
+            bug("tcp_func: connect from host %s, port %hd.\n",
+                  inet_ntoa (clientname.sin_addr),
+                  ntohs (clientname.sin_port));
+            pthread_mutex_lock(&fd_mutex);
+            fd = tmp_fd;
+            pthread_mutex_unlock(&fd_mutex);
+        }
+
+        // Receive a command from another thread
+        if (FD_ISSET(command_pipe[0], &readFDs)) {
+            uint8_t cmd = '#';
+            ::read(command_pipe[0], &cmd, 1);
+            switch (cmd) {
+                case 'q':
+                    ::close(tcp_socket); // not accepting any more incoming client requests
+                    tcp_socket = -1;
+                    return NULL;
+                default:
+                    bug("XSERDPort::tcp_thread: unknown command '%c'\n", cmd);
+            }
+            break;
+        }
+    }
+    return NULL;
+}
+
+
+bool XSERDPort::open_tcp_client(const char *addr, int port)
+{
+    return false;
+}
+
+void XSERDPort::tcp_accept_client()
+{
+}
+
+void XSERDPort::tcp_disconnect_client()
+{
+    pthread_mutex_lock(&fd_mutex);
+    if (fd!=-1) {
+        ::close(fd);
+        fd = -1;
+    }
+    pthread_mutex_unlock(&fd_mutex);
+//    sem_post(&input_signal);
+//    sem_post(&output_signal);
+}
+
+
+bool XSERDPort::tcp_launch_thread()
+{
+    int ret = 0;
+    if (command_pipe[0]==-1 || command_pipe[1]==-1) {
+        ret = pipe(command_pipe);
+        if (ret==-1) {
+            bug("XSERDPort::tcp_launch_thread: error creating command pipe: %s\n", strerror(errno));
+            return false;
+        }
+    }
+    ret = pthread_create(&tcp_thread_handler, NULL, tcp_thread_stub, this);
+    if (ret!=0) {
+        bug("XSERDPort::tcp_launch_thread: error creating thread: %d\n", ret);
+        return false;
+    }
+    tcp_thread_active = true;
+    return true;
+}
+
+
+void XSERDPort::tcp_kill_thread(bool for_good)
+{
+    if (tcp_thread_active)
+    {
+        ::write(command_pipe[1], "q", 1);
+        pthread_join(tcp_thread_handler, NULL);
+        tcp_thread_active = false;
+    }
+    if (for_good) {
+        if (command_pipe[0]!=-1) ::close(command_pipe[0]);
+        if (command_pipe[1]!=-1) ::close(command_pipe[1]);
+    }
+}
+

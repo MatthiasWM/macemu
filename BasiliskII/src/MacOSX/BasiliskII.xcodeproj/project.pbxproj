@@ -37,7 +37,6 @@
 		7539E1381F23B25A006B2DF2 /* Credits.html in Resources */ = {isa = PBXBuildFile; fileRef = 7539E00A1F23B25A006B2DF2 /* Credits.html */; };
 		7539E13B1F23B25A006B2DF2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7539E00F1F23B25A006B2DF2 /* InfoPlist.strings */; };
 		7539E13E1F23B25A006B2DF2 /* HowTo.html in Resources */ = {isa = PBXBuildFile; fileRef = 7539E0141F23B25A006B2DF2 /* HowTo.html */; };
-		7539E14B1F23B25A006B2DF2 /* ToDo.html in Resources */ = {isa = PBXBuildFile; fileRef = 7539E02B1F23B25A006B2DF2 /* ToDo.html */; };
 		7539E14D1F23B25A006B2DF2 /* Versions.html in Resources */ = {isa = PBXBuildFile; fileRef = 7539E02E1F23B25A006B2DF2 /* Versions.html */; };
 		7539E16C1F23B25A006B2DF2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E0651F23B25A006B2DF2 /* main.cpp */; };
 		7539E16D1F23B25A006B2DF2 /* pict.c in Sources */ = {isa = PBXBuildFile; fileRef = 7539E0681F23B25A006B2DF2 /* pict.c */; };
@@ -90,7 +89,6 @@
 		7539E2801F23C4CA006B2DF2 /* main_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E27F1F23C4CA006B2DF2 /* main_unix.cpp */; };
 		7539E2911F23C56F006B2DF2 /* prefs_editor_dummy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E2881F23C56F006B2DF2 /* prefs_editor_dummy.cpp */; };
 		7539E2921F23C56F006B2DF2 /* scsi_dummy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E2891F23C56F006B2DF2 /* scsi_dummy.cpp */; };
-		7539E2931F23C56F006B2DF2 /* serial_dummy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E28A1F23C56F006B2DF2 /* serial_dummy.cpp */; };
 		7539E2971F23C5FD006B2DF2 /* newcpu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E2961F23C5FD006B2DF2 /* newcpu.cpp */; };
 		7539E29D1F23C83F006B2DF2 /* sys_darwin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E29C1F23C83F006B2DF2 /* sys_darwin.cpp */; };
 		7539E29F1F23C939006B2DF2 /* fpu_uae.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7539E29E1F23C939006B2DF2 /* fpu_uae.cpp */; };
@@ -100,6 +98,7 @@
 		757A2BF01F5AF9D6003EDB01 /* user_strings_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 757A2BEF1F5AF9D6003EDB01 /* user_strings_unix.cpp */; };
 		75CBCF751F5DB3AD00830063 /* video_sdl2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 75CBCF741F5DB3AD00830063 /* video_sdl2.cpp */; };
 		75CBCF771F5DB65E00830063 /* video_sdl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 75CBCF761F5DB65E00830063 /* video_sdl.cpp */; };
+		C912716F23F368860029D528 /* serial_unix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C912716E23F368860029D528 /* serial_unix.cpp */; };
 		E40CEEC620D7910E00BCB88D /* SDLMain.m in Sources */ = {isa = PBXBuildFile; fileRef = E40CEEC520D7910E00BCB88D /* SDLMain.m */; };
 		E413D92120D260BC00E437D8 /* tftp.c in Sources */ = {isa = PBXBuildFile; fileRef = E413D8F820D260B900E437D8 /* tftp.c */; };
 		E413D92220D260BC00E437D8 /* mbuf.c in Sources */ = {isa = PBXBuildFile; fileRef = E413D8F920D260B900E437D8 /* mbuf.c */; };
@@ -259,7 +258,6 @@
 		7539E00A1F23B25A006B2DF2 /* Credits.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = Credits.html; sourceTree = "<group>"; };
 		7539E0101F23B25A006B2DF2 /* English */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		7539E0141F23B25A006B2DF2 /* HowTo.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = HowTo.html; sourceTree = "<group>"; };
-		7539E02B1F23B25A006B2DF2 /* ToDo.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = ToDo.html; sourceTree = "<group>"; };
 		7539E02E1F23B25A006B2DF2 /* Versions.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = Versions.html; sourceTree = "<group>"; };
 		7539E0651F23B25A006B2DF2 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../main.cpp; sourceTree = "<group>"; };
 		7539E0681F23B25A006B2DF2 /* pict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pict.c; path = ../pict.c; sourceTree = "<group>"; };
@@ -357,6 +355,7 @@
 		757A2BEF1F5AF9D6003EDB01 /* user_strings_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = user_strings_unix.cpp; sourceTree = "<group>"; };
 		75CBCF741F5DB3AD00830063 /* video_sdl2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = video_sdl2.cpp; sourceTree = "<group>"; };
 		75CBCF761F5DB65E00830063 /* video_sdl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = video_sdl.cpp; sourceTree = "<group>"; };
+		C912716E23F368860029D528 /* serial_unix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = serial_unix.cpp; sourceTree = "<group>"; };
 		E40CEEC420D7910D00BCB88D /* SDLMain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDLMain.h; sourceTree = "<group>"; };
 		E40CEEC520D7910E00BCB88D /* SDLMain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SDLMain.m; sourceTree = "<group>"; };
 		E413D8F820D260B900E437D8 /* tftp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tftp.c; sourceTree = "<group>"; };
@@ -615,7 +614,6 @@
 				7539E00F1F23B25A006B2DF2 /* InfoPlist.strings */,
 				7539E0141F23B25A006B2DF2 /* HowTo.html */,
 				7539E29C1F23C83F006B2DF2 /* sys_darwin.cpp */,
-				7539E02B1F23B25A006B2DF2 /* ToDo.html */,
 				756C1B321F252FC100620917 /* utils_macosx.h */,
 				756C1B331F252FC100620917 /* utils_macosx.mm */,
 				7539E02E1F23B25A006B2DF2 /* Versions.html */,
@@ -736,6 +734,7 @@
 		7539E1E91F23B329006B2DF2 /* Unix */ = {
 			isa = PBXGroup;
 			children = (
+				C912716E23F368860029D528 /* serial_unix.cpp */,
 				7539E1F01F23B329006B2DF2 /* bincue_unix.cpp */,
 				7539E1F11F23B329006B2DF2 /* bincue_unix.h */,
 				7539E1F71F23B329006B2DF2 /* Darwin */,
@@ -916,10 +915,12 @@
 				TargetAttributes = {
 					753252D91F5358D30024025B = {
 						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = BK4ST6N599;
 						ProvisioningStyle = Automatic;
 					};
 					753252F21F535E1E0024025B = {
 						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = BK4ST6N599;
 						ProvisioningStyle = Automatic;
 					};
 					753253071F5360E30024025B = {
@@ -932,6 +933,7 @@
 					};
 					7539DFB11F23B17E006B2DF2 = {
 						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = BK4ST6N599;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -980,7 +982,6 @@
 				7539E2451F23B32A006B2DF2 /* gtk-osx.patch in Resources */,
 				7539E2AB1F23CDB7006B2DF2 /* Info.plist in Resources */,
 				7539E2471F23B32A006B2DF2 /* mkstandalone in Resources */,
-				7539E14B1F23B25A006B2DF2 /* ToDo.html in Resources */,
 				7539E13E1F23B25A006B2DF2 /* HowTo.html in Resources */,
 				7539E1751F23B25A006B2DF2 /* keycodes in Resources */,
 				E413D92B20D260BC00E437D8 /* COPYRIGHT in Resources */,
@@ -1060,7 +1061,6 @@
 				753253321F5368370024025B /* cpuemu.cpp in Sources */,
 				7539E2701F23B32A006B2DF2 /* tinyxml2.cpp in Sources */,
 				7539E1721F23B25A006B2DF2 /* rsrc_patches.cpp in Sources */,
-				7539E2931F23C56F006B2DF2 /* serial_dummy.cpp in Sources */,
 				7539E1981F23B25A006B2DF2 /* exceptions.cpp in Sources */,
 				75CBCF771F5DB65E00830063 /* video_sdl.cpp in Sources */,
 				7539E1901F23B25A006B2DF2 /* basilisk_glue.cpp in Sources */,
@@ -1077,6 +1077,7 @@
 				E413D93420D260BC00E437D8 /* tcp_output.c in Sources */,
 				7539E26E1F23B32A006B2DF2 /* sys_unix.cpp in Sources */,
 				7539E1271F23B25A006B2DF2 /* cdrom.cpp in Sources */,
+				C912716F23F368860029D528 /* serial_unix.cpp in Sources */,
 				E413D92A20D260BC00E437D8 /* sbuf.c in Sources */,
 				753253311F5368370024025B /* cpuemu_nf.cpp in Sources */,
 				7539E1261F23B25A006B2DF2 /* audio.cpp in Sources */,
@@ -1172,6 +1173,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LIBRARY = "libc++";
+				DEVELOPMENT_TEAM = BK4ST6N599;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1190,6 +1192,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LIBRARY = "libc++";
+				DEVELOPMENT_TEAM = BK4ST6N599;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1348,6 +1351,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = NO;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = NO;
 				COMBINE_HIDPI_IMAGES = NO;
+				DEVELOPMENT_TEAM = BK4ST6N599;
 				ENABLE_NS_ASSERTIONS = YES;
 				ENABLE_TESTABILITY = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1358,6 +1362,12 @@
 				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					HAVE_CONFIG_H,
+					"USE_XCODE=1",
+					"DEBUG=1",
+					HAVE_DEV_PTMX,
+				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_USE_STANDARD_INCLUDE_SEARCHING = YES;
 				GCC_WARN_CHECK_SWITCH_STATEMENTS = NO;
@@ -1398,6 +1408,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = NO;
 				COMBINE_HIDPI_IMAGES = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = BK4ST6N599;
 				ENABLE_NS_ASSERTIONS = YES;
 				ENABLE_TESTABILITY = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1410,6 +1421,11 @@
 				GCC_ENABLE_PASCAL_STRINGS = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					HAVE_DEV_PTMX,
+					HAVE_CONFIG_H,
+					"USE_XCODE=1",
+				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_USE_STANDARD_INCLUDE_SEARCHING = YES;
 				GCC_WARN_CHECK_SWITCH_STATEMENTS = NO;

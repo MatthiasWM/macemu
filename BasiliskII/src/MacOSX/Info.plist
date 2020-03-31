@@ -22,6 +22,8 @@
 	<string>Basilisk II 1.0, SDL2 port</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.lifestyle</string>
 	<key>NSHelpFile</key>
 	<string>README.txt</string>
 	<key>NSMainNibFile</key>
