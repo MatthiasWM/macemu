@@ -137,7 +137,8 @@ uint32 TimeToMacTime(time_t t)
 	const int TM_EPOCH_YEAR = 1900;
 	const int MAC_EPOCH_YEAR = 1904;
 	// Clip year and day offsets to prevent dates earlier than 1-Jan-1904
-	local->tm_year = std::max(MAC_EPOCH_YEAR - TM_EPOCH_YEAR, local->tm_year + PrefsFindInt32("yearofs"));
+//#define MAX(a, b) (a)>(b) ? (a) : (b)
+	local->tm_year = (std::max)(MAC_EPOCH_YEAR - TM_EPOCH_YEAR, local->tm_year + PrefsFindInt32("yearofs"));
 	int a4 = ((local->tm_year + TM_EPOCH_YEAR) >> 2) - !(local->tm_year & 3);
 	int b4 = (MAC_EPOCH_YEAR >> 2) - !(MAC_EPOCH_YEAR & 3);
 	int a100 = a4 / 25 - (a4 % 25 < 0);

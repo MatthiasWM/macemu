@@ -214,8 +214,6 @@ struct qlink {
  */
 #ifdef PRAGMA_PACK_SUPPORTED
 #pragma pack(1)
-#endif
-
 struct ipovly {
 	struct mbuf_ptr ih_mbuf;	/* backpointer to mbuf */
 	u_int8_t	ih_x1;			/* (unused) */
@@ -223,10 +221,17 @@ struct ipovly {
 	u_int16_t	ih_len;			/* protocol length */
 	struct	in_addr ih_src;		/* source internet address */
 	struct	in_addr ih_dst;		/* destination internet address */
-}  __attribute__((packed));
-
-#ifdef PRAGMA_PACK_SUPPORTED
+};
 #pragma pack(0)
+#else
+struct ipovly {
+    struct mbuf_ptr ih_mbuf;	/* backpointer to mbuf */
+    u_int8_t	ih_x1;			/* (unused) */
+    u_int8_t	ih_pr;			/* protocol */
+    u_int16_t	ih_len;			/* protocol length */
+    struct	in_addr ih_src;		/* source internet address */
+    struct	in_addr ih_dst;		/* destination internet address */
+} __attribute__((packed));
 #endif
 
 /*

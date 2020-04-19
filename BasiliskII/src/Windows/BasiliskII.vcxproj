@@ -63,7 +63,16 @@
     <ClCompile Include="..\slirp\debug.c" />
     <ClCompile Include="..\slirp\if.c" />
     <ClCompile Include="..\slirp\ip_icmp.c" />
-    <ClCompile Include="..\slirp\ip_input.c" />
+    <ClCompile Include="..\slirp\ip_input.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release JIT|Win32'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug JIT|Win32'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release JIT|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug JIT|x64'">CompileAsC</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\slirp\ip_output.c" />
     <ClCompile Include="..\slirp\mbuf.c" />
     <ClCompile Include="..\slirp\misc.c" />
@@ -267,58 +276,58 @@
     <ProjectGuid>{1AAA5D96-9498-4EB5-A436-0143E2B7A0B0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>BasiliskII</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug JIT|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug JIT|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release JIT|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release JIT|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -411,6 +420,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -418,9 +428,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -447,6 +457,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -454,9 +465,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -480,6 +491,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -487,9 +499,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -516,6 +528,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -523,9 +536,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -551,6 +564,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -560,9 +574,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -591,6 +605,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -600,9 +615,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -628,6 +643,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -637,9 +653,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -668,6 +684,7 @@
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -677,9 +694,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd ..\uae_cpu
-"$(ToolsDir)gencpu"
-"$(ToolsDir)gencomp"
+      <Command>cd $(ProjectDir)..\uae_cpu
+..\Windows\x64\Debug\gencpu.exe
+..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>

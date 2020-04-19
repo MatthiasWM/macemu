@@ -43,9 +43,14 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#define container_of(ptr, type, member) ({                      \
-        const typeof(((type *) 0)->member) *__mptr = (ptr);     \
-        (type *) ((char *) __mptr - offsetof(type, member));})
+#define container_of(ptr, type, member) \
+ ((type *)                              \
+   (  ((char *)(ptr))                   \
+    - ((char *)(&((type*)0)->member)) ))
+
+//#define container_of(ptr, type, member) ({                      \
+//        const typeof(((type *) 0)->member) *__mptr = (ptr);     \
+//        (type *) ((char *) __mptr - offsetof(type, member));})
 
 
 #include <slirp.h>
@@ -164,7 +169,7 @@ ip_input(m)
 	 * XXX This should fail, don't fragment yet
 	 */
 	if (ip->ip_off &~ IP_DF) {
-	  register struct ipq *fp;
+		struct ipq* fp = NULL;
       struct qlink *l;
 		/*
 		 * Look for queue of fragments
