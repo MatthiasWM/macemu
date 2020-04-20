@@ -3507,6 +3507,7 @@ static __inline__ void raw_inc_sp(int off)
 #if defined(NATMEM_OFFSET) && 0
 #include <asm/sigcontext.h>
 #include <signal.h>
+#include <intrin.h>
 
 #define SIG_READ 1
 #define SIG_WRITE 2
@@ -4012,6 +4013,8 @@ raw_init_cpu(void)
 
   raw_flags_init();
 }
+
+#include <intrin.h>
 
 static bool target_check_bsf(void)
 {

@@ -575,6 +575,10 @@ relay(s)
 int (*lprint_print) _P((void *, const char *, va_list));
 char *lprint_ptr, *lprint_ptr2, **lprint_arg;
 
+#include <stdio.h>
+#include <stdarg.h>
+#define __STDC__
+
 void
 #ifdef __STDC__
 lprint(const char *format, ...)
