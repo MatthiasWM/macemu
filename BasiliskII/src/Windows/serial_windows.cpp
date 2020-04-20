@@ -164,11 +164,14 @@ private:
     bool tcp_launch_thread();
     void tcp_kill_thread(bool for_good=false);
 
-    SOCKET tcp_socket = INVALID_SOCKET;                     // tcp server socket for listening
-    HANDLE quit_event = INVALID_HANDLE_VALUE;                // a pipe that communicates between app and tcp thread
-    bool tcp_thread_active = false;             // TCP server thread installed
-    unsigned int tcp_thread_id = 0;       // TCP server thread
+    SOCKET server_socket = INVALID_SOCKET;                     // tcp server socket for listening
+    SOCKET client_socket = INVALID_SOCKET;                     // tcp server socket for listening
+    HANDLE tcp_server_event = INVALID_HANDLE_VALUE;
+    HANDLE tcp_client_event = INVALID_HANDLE_VALUE;
+    HANDLE tcp_quit_event = INVALID_HANDLE_VALUE;                // a pipe that communicates between app and tcp thread
     CRITICAL_SECTION fd_mutex;           // protect fd in threads
+    HANDLE tcp_thread_active = INVALID_HANDLE_VALUE;             // TCP server thread installed
+    unsigned int tcp_thread_id = 0;       // TCP server thread
     unsigned int mPort = 0;
 };
 
@@ -209,8 +212,6 @@ void SerialExit(void)
     D(bug("SerialExit\r\n"));
     if(the_serd_port[0]) delete (XSERDPort *)the_serd_port[0];
     if(the_serd_port[1]) delete (XSERDPort *)the_serd_port[1];
-    if (quit_event!=INVALID_HANDLE_VALUE)
-        CloseHandle(quit_event);
     D(bug("SerialExit done\r\n"));
 
     serial_log_close();
@@ -220,6 +221,8 @@ void SerialExit(void)
 XSERDPort::XSERDPort(LPCTSTR dev, LPCTSTR suffix)
 {
     D(bug(TEXT("XSERDPort constructor %s\r\n"), dev));
+
+    InitializeCriticalSectionAndSpinCount(&fd_mutex, 0x00000400);
 
     read_pending = write_pending = false;
 
@@ -257,7 +260,7 @@ XSERDPort::XSERDPort(LPCTSTR dev, LPCTSTR suffix)
 }
 
 
-virtual ~XSERDPort::XSERDPort()
+XSERDPort::~XSERDPort()
 {
     D(bug("XSERDPort destructor \r\n"));
     if (input_thread_active) {
@@ -273,6 +276,10 @@ virtual ~XSERDPort::XSERDPort()
         output_thread_active = NULL;
     }
     tcp_kill_thread(true);
+    DeleteCriticalSection(&fd_mutex);
+    if (is_tcp_server) {
+        WSACleanup();
+    }
 }
 
 
@@ -301,7 +308,10 @@ int16 XSERDPort::open(uint16 config)
                         NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL
                         );
     } else if (is_tcp_server) {
-        // we already grabbed the port number in the constructor
+        tcp_server_event = WSACreateEvent();
+        tcp_client_event = WSACreateEvent();
+        if (!open_tcp_server(mPort))
+            goto open_error;
     } else {
         fd = CreateFile( device_name, GENERIC_READ|GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, 0 );
     }
@@ -342,7 +352,7 @@ int16 XSERDPort::open(uint16 config)
         goto open_error;
 
     if (is_tcp_server) {
-        InitializeCriticalSectionAndSpinCount(&fd_mutex, 0x00000400);
+        tcp_quit_event = CreateEvent(NULL, FALSE, FALSE, NULL);
         tcp_launch_thread();
     }
 
@@ -460,9 +470,11 @@ int16 XSERDPort::control(uint32 pb, uint32 dce, uint16 code)
             }
             // Make sure we won't hang waiting. There is something wrong
             // in how read_pending & write_pending are handled.
-            DWORD endtime = GetTickCount() + 1000;
-            while ( (read_pending || write_pending) && (GetTickCount() < endtime) ) {
-                Sleep(20);
+            {
+                DWORD endtime = GetTickCount() + 1000;
+                while ((read_pending || write_pending) && (GetTickCount() < endtime)) {
+                    Sleep(20);
+                }
             }
             if(read_pending || write_pending) {
                 D(bug("Warning (KillIO): read_pending=%d, write_pending=%d\n", read_pending, write_pending));
@@ -664,9 +676,12 @@ int16 XSERDPort::status(uint32 pb, uint32 dce, uint16 code)
             uint32 num = 0;
             if (is_tcp_server) {
                 EnterCriticalSection(&fd_mutex);
-                if (client_socket!=INVALID_SOCKET)
-#error see if there are any bytes pending
-                    ;
+                if (client_socket != INVALID_SOCKET) {
+                    WSAPOLLFD fdArray[1] = { { client_socket, POLLRDNORM, 0 } };
+                    int ret = WSAPoll(fdArray, 1, 0);
+                    if (ret > 0 && (fdArray[0].revents & POLLRDNORM))
+                        num = 1; // at least one byte is available
+                }
                 LeaveCriticalSection(&fd_mutex);
             }
             if (is_serial) {
@@ -740,14 +755,14 @@ int16 XSERDPort::close()
     // Close port
     if (is_tcp_server) {
         EnterCriticalSection(&fd_mutex);
-        if (client_scoket!=INVALID_SOCKET)
-            closesocket(client_socket);
+        if (client_socket!=INVALID_SOCKET)
+            ::closesocket(client_socket);
         client_socket = INVALID_SOCKET;
         // FIXME: how about the server socket?
         LeaveCriticalSection(&fd_mutex);
-        if (quit_event!=INVALID_HANDLE_VALUE) {
-            CloseHandle(quit_event);
-            quit_event = INVALID_HANDLE_VALUE;
+        if (tcp_quit_event != INVALID_HANDLE_VALUE) {
+            CloseHandle(tcp_quit_event);
+            tcp_quit_event = INVALID_HANDLE_VALUE;
         }
     } else {
         if(fd != INVALID_HANDLE_VALUE) {
@@ -1134,15 +1149,22 @@ unsigned int XSERDPort::input_func(void *arg)
         if(s->is_file) {
             actual = -1;
             error_code = readErr;
-        } else if (is_tcp_server) {
-            if (client_socket!=INVALID_SOCKET) {
-                // TODO: non-blocking receive data
-                // TODO: critical section?
-                num = available bytes
-                if (num>0)
-                    actual = ::recv(...);
-                if (num==0)
-                    sleep(10);  // avoid beiing slammed with read requests
+        } else if (s->is_tcp_server) {
+            actual = 0;
+            error_code = noErr;
+            if (s->client_socket!=INVALID_SOCKET) {
+                WSAPOLLFD fdArray[1] = { { s->client_socket, POLLRDNORM, 10 } };
+                int ret = WSAPoll(fdArray, 1, 0);
+                if (ret == 0) {
+                    actual = 0; // no bytes available
+                    error_code = noErr;
+                }
+                if (ret > 0 && (fdArray[0].revents & POLLRDNORM)) {
+                    actual = ::recv(s->client_socket, (char*)buf, length, 0);
+                    error_code = noErr;
+                }
+            } else {
+                Sleep(500);
             }
         } else if(!ReadFile(s->fd, buf, length, (LPDWORD)&actual, 0)) {
             actual = -1;
@@ -1226,11 +1248,16 @@ unsigned int XSERDPort::output_func(void *arg)
         }
 
         int32 actual;
-        if (is_tcp_server) {
-            pthread_mutex_lock(&s->fd_mutex);
-            ::send(...)
-            int32 actual = s->fd==-1 ? length : (int)write(s->fd, buf, length);
-            pthread_mutex_unlock(&s->fd_mutex);
+        if (s->is_tcp_server) {
+            EnterCriticalSection(&s->fd_mutex);
+            if (s->client_socket != INVALID_SOCKET && length>0) {
+                actual = ::send(s->client_socket, (char*)buf, length, 0);
+                if (actual == -1)
+                    error_code = writErr;
+            } else {
+                Sleep(10);
+            }
+            LeaveCriticalSection(&s->fd_mutex);
         } else {
             if(!WriteFile(s->fd, buf, length, (LPDWORD)&actual, 0)) {
                 actual = -1;
@@ -1290,34 +1317,36 @@ bool XSERDPort::open_tcp_server(int port)
 {
     struct sockaddr_in serv_addr;
 
-    protocol = tcp_server;
-
     // create a socket that will listen to incomming tcp connections
-    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (tcp_socket < 0) {
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket==INVALID_SOCKET) {
         bug("XSERDPort::open_tcp_server: can't create socket: %s\n", strerror(errno));
         return false;
     }
 
     // make sure that a previously opened socket is killed and does not get stuck in TIMEOUT
-    int option = 1;
-    setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+    BOOL option = true;
+    int ret = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)(&option), sizeof(option));
+    if (ret == -1) {
+        printf("Can't set socket to reuse address\n");
+    }
 
     // bind the socket to a port
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port);
-    if (bind(tcp_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        bug("XSERDPort::open_tcp_server: can't bind socket %d to port %d: %s\n", tcp_socket, port, strerror(errno));
+    if (::bind(server_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        bug("XSERDPort::open_tcp_server: can't bind socket %d to port %d: %s\n", server_socket, port, strerror(errno));
         return false;
     }
 
     // now listen to that port for one incomming connection (but no more than one)
-    if (::listen(tcp_socket, 1)==-1) {
-        bug("XSERDPort::open_tcp_server: can't listen on socket %d: %s\n", tcp_socket, strerror(errno));
+    if (::listen(server_socket, 1)==-1) {
+        bug("XSERDPort::open_tcp_server: can't listen on socket %d: %s\n", server_socket, strerror(errno));
         return false;
     }
+    WSAEventSelect(server_socket, tcp_server_event, FD_ACCEPT | FD_CLOSE);
     return true;
 }
 
@@ -1325,151 +1354,104 @@ bool XSERDPort::open_tcp_server(int port)
 /*
  * Manage incoming connections on our TCP port.
  */
-void *XSERDPort::tcp_thread()
+unsigned int XSERDPort::tcp_thread()
 {
-    //    pthread_mutex_lock(&fd_mutex);
-    //    pthread_mutex_unlock(&fd_mutex);
-
-    fd_set readFDs;
-    struct sockaddr_in clientname;
-
     // Loop forever
     for (;;)
     {
-        // Listen to all availabel sockets
-        FD_ZERO(&readFDs);
-        FD_SET(tcp_socket, &readFDs);
-        FD_SET(command_pipe[0], &readFDs);
-        pthread_mutex_lock(&fd_mutex);
-        if (fd!=-1) FD_SET(fd, &readFDs);
-        pthread_mutex_unlock(&fd_mutex);
+        if (quitting) return 0;
 
-        // Wait for something to happen
-        int nEvents = select(FD_SETSIZE, &readFDs, NULL, NULL, NULL);
-        if (nEvents==-1) {
-            bug("XSERDPort::tcp_func: error waiting for TCP client: %s\n", strerror(errno));
-        }
-
-        // Handle events form an existing client
-        pthread_mutex_lock(&fd_mutex);
-        bool handleClient = (fd!=-1 && FD_ISSET(fd, &readFDs));
-        pthread_mutex_unlock(&fd_mutex);
-        if (handleClient) {
-            char buf[1];
-            pthread_mutex_lock(&fd_mutex);
-            fprintf(stderr, "-->");
-            size_t ret  = ::recv(fd, buf, 1, MSG_PEEK);
-            fprintf(stderr, "<--\n");
-            pthread_mutex_unlock(&fd_mutex);
-            if (ret==-1) { // error
-                if (errno==EAGAIN || errno==EWOULDBLOCK) {
-                    // that's ok
-                } else {
-                    bug("XSERDPort::tcp_func: client read error: %s\n", strerror(errno));
-                    tcp_disconnect_client();
+        int nWaitFor = 0;
+        HANDLE waitFor[4];
+        waitFor[nWaitFor++] = tcp_quit_event;
+        if (server_socket != INVALID_SOCKET)
+            waitFor[nWaitFor++] = tcp_server_event;
+        if (client_socket != INVALID_SOCKET)
+            waitFor[nWaitFor++] = tcp_client_event;
+        DWORD event = WSAWaitForMultipleEvents(nWaitFor, waitFor, FALSE, INFINITE, TRUE);
+        if (event == WSA_WAIT_EVENT_0) {
+            // main thread wants us to leave
+            ::closesocket(server_socket); // not accepting any more incoming client requests
+            server_socket = INVALID_SOCKET;
+            return 0;
+        } else if (event == WSA_WAIT_EVENT_0 + 1) {
+            // server event happening
+            bug("--- sel: request connect\n");
+            WSANETWORKEVENTS eventMap;
+            WSAEnumNetworkEvents(server_socket, tcp_server_event, &eventMap);
+            if (eventMap.lNetworkEvents & FD_ACCEPT) {
+                tcp_disconnect_client();
+                SOCKET tmp_socket = ::accept(server_socket, NULL, NULL);
+                if (tmp_socket == INVALID_SOCKET) {
+                    bug("XSERDPort::tcp_func: error accepting TCP client: %s\n", strerror(errno));
                 }
+                EnterCriticalSection(&fd_mutex);
+                client_socket = tmp_socket;
+                WSAEventSelect(client_socket, tcp_client_event, FD_CLOSE);
+                LeaveCriticalSection(&fd_mutex);
             }
-            if (ret==0) { // disconnect
-                bug("XSERDPort::tcp_func: client disconnected\n");
+        } else if (event == WSA_WAIT_EVENT_0 + 2) {
+            // client event happening
+            WSANETWORKEVENTS eventMap;
+            WSAEnumNetworkEvents(client_socket, tcp_client_event, &eventMap);
+            if (eventMap.lNetworkEvents & FD_CLOSE) {
                 tcp_disconnect_client();
             }
         }
-
-        // Handle incoming client connection requests
-        if (FD_ISSET(tcp_socket, &readFDs)) {
-            // a client wants to connect to us
-            bug("--- sel: request connect\n");
-            tcp_disconnect_client();
-            socklen_t size = sizeof(clientname);
-            int tmp_fd = ::accept(tcp_socket, (struct sockaddr *) &clientname, &size);
-            if (tmp_fd<0) {
-                bug("XSERDPort::tcp_func: error accepting TCP client: %s\n", strerror(errno));
-            }
-            fcntl(tmp_fd, F_SETFL, O_NONBLOCK);
-            bug("tcp_func: connect from host %s, port %hd.\n",
-                inet_ntoa (clientname.sin_addr),
-                ntohs (clientname.sin_port));
-            pthread_mutex_lock(&fd_mutex);
-            fd = tmp_fd;
-            pthread_mutex_unlock(&fd_mutex);
-        }
-
-        // Receive a command from another thread
-        if (FD_ISSET(command_pipe[0], &readFDs)) {
-            uint8_t cmd = '#';
-            ::read(command_pipe[0], &cmd, 1);
-            switch (cmd) {
-                case 'q':
-                    ::close(tcp_socket); // not accepting any more incoming client requests
-                    tcp_socket = -1;
-                    return NULL;
-                default:
-                    bug("XSERDPort::tcp_thread: unknown command '%c'\n", cmd);
-            }
-            break;
-        }
     }
-    return NULL;
+    return 0;
 }
 
 
 bool XSERDPort::open_tcp_client(const char *addr, int port)
 {
+    // empty
     return false;
 }
 
 void XSERDPort::tcp_accept_client()
 {
+    // empty
 }
 
 void XSERDPort::tcp_disconnect_client()
 {
-    pthread_mutex_lock(&fd_mutex);
-    if (fd!=-1) {
-        ::close(fd);
-        fd = -1;
+    EnterCriticalSection(&fd_mutex);
+    if (client_socket != INVALID_SOCKET) {
+        ::closesocket(client_socket);
+        client_socket = INVALID_SOCKET;
     }
-    pthread_mutex_unlock(&fd_mutex);
-    //    sem_post(&input_signal);
-    //    sem_post(&output_signal);
+    LeaveCriticalSection(&fd_mutex);
 }
 
 
 bool XSERDPort::tcp_launch_thread()
 {
-    int ret = 0;
-    if (command_pipe[0]==-1 || command_pipe[1]==-1) {
-        ret = pipe(command_pipe);
-        if (ret==-1) {
-            bug("XSERDPort::tcp_launch_thread: error creating command pipe: %s\n", strerror(errno));
-            return false;
-        }
-    }
-    ret = pthread_create(&tcp_thread_handler, NULL, tcp_thread_stub, this);
-    if (ret!=0) {
-        bug("XSERDPort::tcp_launch_thread: error creating thread: %d\n", ret);
+    tcp_thread_active = (HANDLE)_beginthreadex(0, 0, tcp_thread_stub, (LPVOID)this, 0, &tcp_thread_id);
+    if (tcp_thread_active == INVALID_HANDLE_VALUE) {
+        bug("XSERDPort::tcp_launch_thread: error creating thread.\n");
         return false;
     }
-    tcp_thread_active = true;
     return true;
 }
 
 
 void XSERDPort::tcp_kill_thread(bool for_good)
 {
-    if (tcp_thread_active)
+    if (tcp_thread_active!=INVALID_HANDLE_VALUE)
     {
-        ::write(command_pipe[1], "q", 1);
-        pthread_join(tcp_thread_handler, NULL);
-        tcp_thread_active = false;
-    }
-    if (for_good) {
-        if (command_pipe[0]!=-1) ::close(command_pipe[0]);
-        if (command_pipe[1]!=-1) ::close(command_pipe[1]);
+        SetEvent(tcp_quit_event);
+        //pthread_join(tcp_thread_handler, NULL);
+        if (for_good) {
+            TerminateThread(tcp_thread_active, 0);
+        }
+        tcp_thread_active = INVALID_HANDLE_VALUE;
     }
 }
 
 // ---- WINDOWS tcp/ip ----------------------------------------------------------------
+
+#if 0
 
 /**
  Create a listening server socket on the given port. When a connaction comes in,
@@ -1678,4 +1660,5 @@ unsigned int XSERDPort::tcp_input()
     return(0);
 }
 
+#endif
 

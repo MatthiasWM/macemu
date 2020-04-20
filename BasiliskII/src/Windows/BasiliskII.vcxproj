@@ -428,9 +428,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -465,9 +465,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -499,9 +499,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -536,9 +536,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -574,9 +574,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -615,9 +615,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -653,9 +653,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
@@ -694,9 +694,9 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>cd $(ProjectDir)..\uae_cpu
-..\Windows\x64\Debug\gencpu.exe
-..\Windows\x64\Debug\gencomp.exe
+      <Command>rem cd $(ProjectDir)..\uae_cpu
+rem ..\Windows\x64\Debug\gencpu.exe
+rem ..\Windows\x64\Debug\gencomp.exe
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
