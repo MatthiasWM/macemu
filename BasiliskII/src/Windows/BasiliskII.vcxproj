@@ -428,10 +428,7 @@
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -465,10 +462,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -499,10 +493,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -536,10 +527,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -574,10 +562,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -615,10 +600,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -653,10 +635,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>
@@ -694,10 +673,7 @@ rem ..\Windows\x64\Debug\gencomp.exe
       <AdditionalDependencies>WS2_32.lib;IPHlpApi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
-      <Command>rem cd $(ProjectDir)..\uae_cpu
-rem ..\Windows\x64\Debug\gencpu.exe
-rem ..\Windows\x64\Debug\gencomp.exe
-</Command>
+      <Command>cd $(ProjectDir)..\uae_cpu &amp;&amp; $(ToolsDir)\gencpu.exe &amp;&amp; $(ToolsDir)\gencomp.exe</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Generating CPU emulation sources...</Message>

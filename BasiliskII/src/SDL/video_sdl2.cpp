@@ -957,7 +957,7 @@ void driver_base::init()
 	set_video_mode(display_type == DISPLAY_SCREEN ? SDL_WINDOW_FULLSCREEN : 0);
 	int aligned_height = (VIDEO_MODE_Y + 15) & ~15;
 
-#ifdef ENABLE_VOSF
+#if 0 //ENABLE_VOSF
 	use_vosf = true;
 	// Allocate memory for frame buffer (SIZE is extended to page-boundary)
 	the_buffer_size = page_extend((aligned_height + 2) * s->pitch);
